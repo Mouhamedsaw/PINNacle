@@ -1,3 +1,5 @@
+#Modified on Fri 8 August 2025
+
 import deepxde as dde
 import numpy as np
 
@@ -5,8 +7,12 @@ DEFAULT_NUM_DOMAIN_POINTS = 8192
 DEFAULT_NUM_BOUNDARY_POINTS = 2048
 DEFAULT_NUM_TEST_POINTS = 8192
 DEFAULT_NUM_INITIAL_POINTS = 2048
-
-
+train_distribution = {"uniform", "LHS", "Sobol", "Hammersley", "Halton", "pseudo"}
+'''
+The distribution to sample training points. One of the following:
+“uniform” (equispaced grid), “pseudo” (pseudorandom), “LHS” (Latin hypercube sampling),
+“Halton” (Halton sequence), “Hammersley” (Hammersley sequence), or “Sobol” (Sobol sequence).
+'''
 class BasePDE():
 
     def __init__(self):
@@ -20,6 +26,7 @@ class BasePDE():
         self.num_domain_points = DEFAULT_NUM_DOMAIN_POINTS
         self.num_boundary_points = DEFAULT_NUM_BOUNDARY_POINTS
         self.num_test_points = DEFAULT_NUM_TEST_POINTS
+        self.train_distribution = "LHS"                         #Added on Fri 8 August 2025 
 
         self.ref_sol = None
         self.ref_data = None
@@ -127,10 +134,11 @@ class BasePDE():
                 raise ValueError(f"Unknown bc type: {bc['type']}")
             self.loss_config.append({'name': bc['name'], 'type': 'boundary'})
 
-    def training_points(self, domain=DEFAULT_NUM_DOMAIN_POINTS, boundary=DEFAULT_NUM_BOUNDARY_POINTS, test=DEFAULT_NUM_TEST_POINTS, mul=1):
+    def training_points(self, domain=DEFAULT_NUM_DOMAIN_POINTS, boundary=DEFAULT_NUM_BOUNDARY_POINTS, test=DEFAULT_NUM_TEST_POINTS, train_distribution="LHS", mul=1):
         self.num_domain_points = domain * mul
         self.num_boundary_points = boundary * mul
         self.num_test_points = test * mul
+        self.train_distribution = train_distribution                         #Added on Fri 8 August 2025
 
     def check(self):
         if self.pde is None:
@@ -189,6 +197,7 @@ class BasePDE():
             num_domain=self.num_domain_points,
             num_boundary=self.num_boundary_points,
             num_test=self.num_test_points,
+            train_distribution=self.train_distribution,       # Added on Fri 8 August 2025
         )
         self.model = dde.Model(self.data, net)
         self.model.pde = self
@@ -218,12 +227,14 @@ class BaseTimePDE(BasePDE):
         boundary=DEFAULT_NUM_BOUNDARY_POINTS,
         initial=DEFAULT_NUM_INITIAL_POINTS,
         test=DEFAULT_NUM_TEST_POINTS,
+        train_distribution="LHS",                                        #Added on Fri 8 August 2025
         mul=1,
     ):
         self.num_domain_points = domain * mul
         self.num_boundary_points = boundary * mul
         self.num_initial_points = initial * mul
         self.num_test_points = test * mul
+        self.train_distribution = train_distribution                   #Added on Fri 8 August 2025
 
     def create_model(self, net):
         self.check()
@@ -235,7 +246,8 @@ class BaseTimePDE(BasePDE):
             num_domain=self.num_domain_points,
             num_boundary=self.num_boundary_points,
             num_initial=self.num_initial_points,
-            num_test=self.num_test_points
+            num_test=self.num_test_points,
+            train_distribution=self.train_distribution                 #Added on Fri 8 August 2025
         )
         self.model = dde.Model(self.data, net)
         self.model.pde = self
